@@ -72,6 +72,25 @@
   # Enable CUPS to print documents.
   services.printing.enable = true;
 
+  #nix config backup
+  systemd.services.backup = {
+    description = "Daily Backup Job";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "/run/current-system/sw/bin/bash  /home/yossif/nix-config/backup.sh";
+      Environment = "PATH=/usr/bin:/bin:/usr/local/bin";
+    };
+  };
+
+  systemd.timers.backup = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "daily";
+      Persistent = true;
+    };
+  };
+
+
   # Enable sound with pipewire.
   hardware.pulseaudio.enable = false;
   security.rtkit.enable = true;

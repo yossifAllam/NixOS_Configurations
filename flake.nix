@@ -33,6 +33,6 @@
             home-manager.users.yossif = import ./home/yossif/home.nix;
           }
         ];
-      };
     };
+  };
 }
