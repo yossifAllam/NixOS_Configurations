@@ -78,7 +78,7 @@
     serviceConfig = {
       Type = "oneshot";
       ExecStart = "/run/current-system/sw/bin/bash  /home/yossif/nix-config/backup.sh";
-      Environment = "PATH=/usr/bin:/bin:/usr/local/bin";
+      Environment = "PATH=/run/current-system/sw/bin:/home/yossif/.nix-profile/bin:/usr/local/bin:/usr/bin:/bin";
     };
   };
 
