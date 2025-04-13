@@ -32,13 +32,11 @@
                 "winapps.cachix.org-1:HI82jWrXZsQRar/PChgIx1unmuEsiQMQq+zt05CD36g="
               ];
             };
-
-            environment.systemPackages = [
-              winapps.packages."x86_64-linux".winapps
-              winapps.packages."x86_64-linux".winapps-launcher
-            ];
           }
         ];
+        specialArgs = {
+          inherit winapps;
+        };
       };
 
       # Optional: Home Manager standalone config (non-NixOS)

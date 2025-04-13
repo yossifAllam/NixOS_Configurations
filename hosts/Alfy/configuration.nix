@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, winapps, ... }:
 
 {
   imports = [
@@ -59,8 +59,6 @@
     };
   };
 
-  virtualisation.libvirtd.enable = true;
-
   services.pulseaudio.enable = false;
   hardware.bluetooth.enable = true;
 
@@ -89,8 +87,34 @@
   users.users.yossif = {
     isNormalUser = true;
     description = "yossif";
-    extraGroups = [ "networkmanager" "wheel" "libvirtd" "kvm"];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" "kvm" "qemu-libvirtd"];
   };
+
+  virtualisation.libvirtd = {
+    enable = true;
+    onBoot = "ignore";
+    onShutdown = "shutdown";
+    extraConfig = ''
+      unix_sock_group = "libvirtd"
+      unix_sock_rw_perms = "0770"
+    '';
+    qemu = {
+      package = pkgs.qemu_kvm;
+      runAsRoot = true;
+      swtpm.enable = true;
+    };
+  };
+
+  programs.dconf.enable = true;
+  services.dbus.enable = true;
+
+  security.polkit.extraConfig = ''
+    polkit.addRule(function(action, subject) {
+      if (action.id == "org.libvirt.unix.manage" && subject.isInGroup("libvirt")) {
+        return polkit.Result.YES;
+      }
+    });
+  '';
 
   environment.systemPackages = with pkgs; [
     grub2
@@ -103,9 +127,16 @@
     ventoy-full
     libvirt
     virt-manager
-    qemu
+    virt-viewer
+    spice-protocol
+    win-virtio
+    win-spice
+    qemu_kvm
     spice-gtk
     libguestfs
+    winapps.packages."x86_64-linux".winapps
+    winapps.packages."x86_64-linux".winapps-launcher
+    ntfs3g
   ];
 
   nixpkgs.config.allowUnfree = true;

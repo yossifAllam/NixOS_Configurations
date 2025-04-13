@@ -30,5 +30,6 @@
     freerdp
     mlocate
     python312Packages.ipython
+    vscode
   ];
 }
