@@ -5,7 +5,6 @@
     ./hardware-configuration.nix
   ];
 
-  # Bootloader and resume
   boot.loader = {
     grub = {
       enable = true;
@@ -17,12 +16,23 @@
     };
     efi.canTouchEfiVariables = true;
   };
-  boot.kernelParams = [ "resume=UUID=28b1ff21-66ab-4ae4-af24-56257591c88b" ];
+  boot.kernelParams = ["resume=UUID=28b1ff21-66ab-4ae4-af24-56257591c88b"];
 
-  networking.hostName = "Alfy";
+  boot.kernelModules = [ "iwlwifi"];
+  boot.extraModprobeConfig = ''
+    options iwlwifi bt_coex_active=Y  power_save=0
+  '';
+
+  services.udev.extraRules = ''
+    # Unbind iwlwifi from the 1030 (8086:008b) after it's loaded
+    ACTION=="add", SUBSYSTEM=="pci", ATTRS{vendor}=="0x8086", ATTRS{device}=="0x008b", RUN+="/bin/sh -c 'echo 0000:0c:00.0 > /sys/bus/pci/drivers/iwlwifi/unbind'"
+  '';
+
   networking.networkmanager.enable = true;
+  networking.hostName = "Alfy";
 
   time.timeZone = "Africa/Cairo";
+  time.hardwareClockInLocalTime = true;
 
   i18n = {
     defaultLocale = "en_US.UTF-8";
@@ -50,33 +60,44 @@
     printing.enable = true;
     openssh.enable = true;
     blueman.enable = true;
+  };
 
-    pipewire = {
-      enable = true;
-      alsa.enable = true;
-      alsa.support32Bit = true;
-      pulse.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+    wireplumber.extraConfig = {
+      "bluez.conf" = {
+      "bluez.properties" = {
+      "bluez5.enable-hsp" = false;
+      "bluez5.enable-msbc" = false;
+      "bluez5.enable-hw-volume" = true;
+    };
+  };
+};
+
+  };
+
+  hardware.enableAllFirmware = true;
+  services.pulseaudio.enable = false;
+  hardware.bluetooth = {
+    enable = true;
+    settings = {
+      General = {
+        SCO = "Disabled";
+      };
     };
   };
 
-  services.pulseaudio.enable = false;
-  hardware.bluetooth.enable = true;
-
   security.rtkit.enable = true;
 
-  systemd = {
-    services.backup = {
-      description = "Daily Backup Job";
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = "/run/current-system/sw/bin/bash /home/yossif/nix-config/backup.sh";
-        Environment = "PATH=/run/current-system/sw/bin:/home/yossif/.nix-profile/bin:/usr/local/bin:/usr/bin:/bin";
-      };
-    };
-    timers.backup = {
-      wantedBy = [ "timers.target" ];
-      timerConfig.OnCalendar = "daily";
-      timerConfig.Persistent = true;
+  systemd.user.services.bluetooth-reconnect = {
+    description = "Auto-reconnect Bluetooth headphones";
+    wantedBy = [ "default.target" ];
+    serviceConfig = {
+      ExecStart = "/usr/local/bin/bluetooth-reconnect";
+      Type = "oneshot";
     };
   };
 
@@ -87,7 +108,7 @@
   users.users.yossif = {
     isNormalUser = true;
     description = "yossif";
-    extraGroups = [ "networkmanager" "wheel" "libvirtd" "kvm" "qemu-libvirtd"];
+    extraGroups = [ "networkmanager" "wheel" "libvirtd" "kvm" "qemu-libvirtd" "docker"];
   };
 
   virtualisation.libvirtd = {
@@ -107,6 +128,7 @@
 
   programs.dconf.enable = true;
   services.dbus.enable = true;
+  virtualisation.docker.enable = true;
 
   security.polkit.extraConfig = ''
     polkit.addRule(function(action, subject) {
@@ -137,6 +159,13 @@
     winapps.packages."x86_64-linux".winapps
     winapps.packages."x86_64-linux".winapps-launcher
     ntfs3g
+    dialog
+    libnotify
+    toybox
+    iw
+    pciutils
+    usbutils
+    expect
   ];
 
   nixpkgs.config.allowUnfree = true;

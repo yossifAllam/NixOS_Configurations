@@ -31,5 +31,6 @@
     mlocate
     python312Packages.ipython
     vscode
+    rar
   ];
 }
